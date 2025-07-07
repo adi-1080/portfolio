@@ -2,7 +2,7 @@
 import type React from "react";
 
 import { useState, useEffect, useRef } from "react";
-// import { TerminalIcon } from "lucide-react";
+import { TerminalIcon } from "lucide-react";
 
 interface Command {
     input: string
@@ -78,8 +78,39 @@ export function Terminal() {
         ],
         whoami: ["aditya-gupta", ""],
         date: [new Date().toString(), ""],
-        pun: ["Why do programmers prefer dark mode?", "Because light attracts bugs! 🐛", ""],
+        joke: ["Why do programmers prefer dark mode?", "Because light attracts bugs! 🐛", ""],
     }
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmedInput = input.trim().toLowerCase();
+
+        if (trimmedInput === "clear") {
+            setHistory([]);
+            setInput("");
+            return;
+        }
+
+        const output = commands[trimmedInput] || [`Command not found: ${trimmedInput}`, `Type "help" for available commands.`, "",];
+
+        setHistory((prev) => [...prev, { input, output }]);
+        setInput("");
+    }
+
+    useEffect(() => {
+        if (terminalRef.current) {
+            terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+        }
+    }, [history]);
+
+    useEffect(() => {
+        const handleClick = () => {
+            inputRef.current?.focus();
+        }
+        document.addEventListener("click", handleClick);
+
+        return () => { document.removeEventListener("click", handleClick); };
+    }, [])
 
     return (
         <section id="terminal" className="py-20 px-4">
@@ -97,8 +128,47 @@ export function Terminal() {
                             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         </div>
+                        <div className="flex items-center ml-4">
+                            <TerminalIcon size={16} className="text-cyan-400 mr-2"></TerminalIcon>
+                            <span className="text-cyan-400 font-mono text-sm">aditya@portfolio:~$</span>
+                        </div>
+                    </div>
+
+                    {/* Terminal content */}
+                    <div ref={terminalRef} className="p-4 h-96 overflow-y-auto font-mono text-sm" onClick={() => inputRef.current?.focus()}>
+                        {history.map((command, index) => (
+                            <div key={index} className="mb-2">
+                                <div className="flex items-center text-cyan-400">
+                                    <span className="text-green-400">aditya@portfolio</span>
+                                    <span className="text-white">:</span>
+                                    <span className="text-blue-400">{currentPath}</span>
+                                    <span className="text-white">$ </span>
+                                    <span className="text-cyan-100">{command.input}</span>
+                                </div>
+                                {command.output.map((line, lineIndex) => (
+                                    <div key={lineIndex} className="text-cyan-100 pl-0">
+                                        {line}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+
+                        {/* Current input line */}
+                        <form onSubmit={handleSubmit} className="flex items-center">
+                            <span className="text-green-400">aditya@portfolio</span>
+                            <span className="text-white">:</span>
+                            <span className="text-blue-400">{currentPath}</span>
+                            <span className="text-white">$</span>
+                            <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 bg-transparent text-cyan-100 outline-none ml-1" autoFocus />
+                            <span className="text-cyan-400 animate-pulse">|</span>
+                            
+                        </form>
                     </div>
                 </div>
+
+                <p className="text-center text-cyan-400 mt-4 font-mono text-sm">
+                    Click anywhere in the terminal to start typing commands!
+                </p>
             </div>
         </section>
     )
